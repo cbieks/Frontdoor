@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum LeadStatus {
+  scraped
+  scored
+  approved
+  rejected
+  demo_generated
+  contacted
+  interested
+  paid
+  deployed
+}
+
+enum ScrapeJobStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+enum DemoSiteStatus {
+  generating
+  ready
+  failed
+}
+
+enum PaymentStatus {
+  pending
+  succeeded
+  failed
+  refunded
+}
+
+enum DomainStatus {
+  pending
+  configured
+  verified
+  failed
+}
+
+enum DeploymentStatus {
+  queued
+  building
+  ready
+  error
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Lead {
+  id             String     @id @default(cuid())
+  businessName   String
+  address        String?
+  phone          String?
+  category       String?
+  rating         Float?
+  reviewCount    Int?
+  website        String?    // nullable — no website = strong lead signal
+  googlePlaceId  String     @unique
+  status         LeadStatus @default(scraped)
+  score          Int?       // 0–100
+  scoreReasoning Json?      // [{ factor: string, impact: "positive"|"negative", note: string }]
+  demoUrl        String?    // /preview/[slug] or Vercel preview URL
+  scrapeJobId    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  scrapeJob  ScrapeJob?  @relation(fields: [scrapeJobId], references: [id])
+  demoSite   DemoSite?
+  payment    Payment?
+  deployment Deployment?
+}
+
+model ScrapeJob {
+  id            String          @id @default(cuid())
+  query         String          // raw user query e.g. "restaurants in Portland OR"
+  category      String?         // normalized from query
+  location      String?         // city/region from query
+  filters       Json?           // { minRating?, maxReviewCount?, requireNoWebsite? }
+  status        ScrapeJobStatus @default(pending)
+  totalFound    Int             @default(0) // raw Google results
+  totalImported Int             @default(0) // leads written to DB
+  errorMessage  String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime        @default(now())
+
+  leads Lead[]
+}
+
+model DemoSite {
+  id                  String         @id @default(cuid())
+  leadId              String         @unique
+  slug                String         @unique // URL-safe, used in /preview/[slug]
+  contentJson         Json           // structured content Claude returned
+  templateUsed        String?        // "restaurant" | "salon" | "generic"
+  vercelPreviewUrl    String?
+  vercelDeploymentId  String?
+  generationPrompt    String?        @db.Text
+  generationModel     String?
+  status              DemoSiteStatus @default(generating)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  lead Lead @relation(fields: [leadId], references: [id])
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  leadId                String        @unique
+  stripeSessionId       String        @unique
+  stripePaymentIntentId String?
+  stripeCustomerId      String?
+  amount                Int           // in cents
+  currency              String        @default("usd")
+  status                PaymentStatus @default(pending)
+  paidAt                DateTime?
+  createdAt             DateTime      @default(now())
+
+  lead       Lead        @relation(fields: [leadId], references: [id])
+  deployment Deployment?
+}
+
+model Deployment {
+  id                 String           @id @default(cuid())
+  leadId             String           @unique
+  paymentId          String           @unique
+  vercelProjectId    String?
+  vercelDeploymentId String?
+  customDomain       String?
+  domainStatus       DomainStatus     @default(pending)
+  deploymentStatus   DeploymentStatus @default(queued)
+  productionUrl      String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  lead    Lead    @relation(fields: [leadId], references: [id])
+  payment Payment @relation(fields: [paymentId], references: [id])
+}
