@@ -47,3 +47,7 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# Skills that share infomation about my filepaths
+.claude/skills/sweep/
+.claude/skills/obsidian-vault/

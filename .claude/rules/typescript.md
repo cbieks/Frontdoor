@@ -51,3 +51,9 @@
 - CLI scripts in `scripts/` must be run with `tsx`, never `ts-node`
 - Scripts that need env vars must import `dotenv/config` as the first line
 - Top-level `await` is not supported in `tsx` CommonJS mode — wrap in an `async function main()` and call it
+
+## API routes
+
+- Params are `Promise<{...}>` — always `await params` before destructuring
+- Use `Response.json()` for responses (not `NextResponse.json()`)
+- Import `NextRequest` from `next/server` when you need `request.nextUrl` or cookies
