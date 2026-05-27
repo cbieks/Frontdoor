@@ -1,4 +1,5 @@
 ---
+name: generation-schema
 description: Use when working on lib/generation/, templates/, or any code that touches the Level 2 JSON schema. Defines the contract between lead data, the Claude API call, and the template renderer.
 user-invocable: false
 ---

@@ -1,4 +1,5 @@
 ---
+name: lead-scoring
 description: Use when working in lib/scoring/, the scrape→score pipeline, or any code that touches the lead-scoring JSON contract. Defines the contract between scoring inputs, the Claude/Firecrawl calls, and what generation later consumes as existingSiteAnalysisJson.
 user-invocable: false
 ---
@@ -268,7 +269,7 @@ The first two skip the Sonnet call entirely.
 
 ## Caching
 
-Mandatory per [.claude/rules/claude-api.md](.claude/rules/claude-api.md).
+Mandatory per [.claude/rules/claude-api.md](../../rules/claude-api.md).
 Both Path A and Path B system prompts are the same across every lead — perfect
 cache targets. Mark the final block of the cached prefix with
 `cache_control: { type: "ephemeral" }`.
@@ -286,7 +287,7 @@ The status transitions for scoring outcomes:
 - Auto-rejected (any reason): `scraped → scored → rejected`
 
 Both transitions go through `assertTransition` from
-[lib/utils/statusMachine.ts](lib/utils/statusMachine.ts:20). Never write
+[lib/utils/statusMachine.ts](../../../lib/utils/statusMachine.ts). Never write
 `status` directly without calling that first.
 
 Failed scoring (Firecrawl crashed, parser error, network issue) keeps the
