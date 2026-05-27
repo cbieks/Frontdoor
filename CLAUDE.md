@@ -7,13 +7,16 @@ Lead generation and website automation pipeline. Finds small businesses with out
 
 ## Current immediate priority
 
-**Template design comes before further pipeline automation.** The project's differentiation lives in the design quality and per-business intelligence of the demos, not in the volume of templates. Phase 1 scraping work is paused until one genuinely impressive Next.js landing page template exists — one we'd be proud to send to any prospect. Once that template is in place, the rest of the pipeline becomes "make this happen 1000 times with different businesses."
+**Template design (Phase 0.5).** Scraping → scoring → dashboard is now wired end-to-end (Phases 1–3 done as of 2026-05-26). The Generate button on the dashboard returns 501 by design until one genuinely impressive Next.js landing page template exists. The project's differentiation lives in the design quality and per-business intelligence of the demos — Path B leads now arrive with full `existingSiteAnalysisJson` (Firecrawl-extracted logo + colors + fonts, Sonnet-extracted voice + services + painPoints + whatToPreserve) ready to feed into generation. Templates are the only thing between the pipeline and real demos.
 
 ## Architecture overview
 
 ```
-Google Maps scrape → existing-site analysis (Claude with vision) → quality scoring
-→ operator approval → Level 2 demo generation (structural decisions + content)
+Google Maps scrape → leadType classification (at insert)
+→ Path A (no-website): deterministic auto-reject + Haiku scoring
+→ Path B (outdated-website): Firecrawl scrape + regex pre-filter + Sonnet qualitative
+→ auto-reject below SCORING_REJECT_THRESHOLD; survivors visible in dashboard
+→ Level 2 demo generation (structural decisions + content) [Phase 4]
 → demo deployed to <slug>.frontdoor-demos.com → outreach email
 → prospect views demo + optionally submits embedded survey
 → optional regeneration with explicit preferences → Stripe payment
@@ -55,6 +58,15 @@ complete input/output types for both lead types. It also contains
 work complete. Following the skill is not optional — the schema is a
 four-way contract between the skill, the generation prompt, the Zod
 validator, and the template renderer. All four must stay in sync.
+
+### Lead scoring — always use the lead-scoring skill
+
+When working in `lib/scoring/`, the scrape→score pipeline, or any code
+that touches the `ExistingSiteAnalysis` / `ScoreFactor` contract, load
+`.claude/skills/lead-scoring/SKILL.md` first. The skill defines the
+four-way contract (skill ↔ Sonnet prompt ↔ TS guards ↔ detail-page
+renderer) and the source-of-truth split per [[0011]]: Firecrawl owns
+logo + colors, Sonnet owns qualitative analysis.
 
 ### Default models and cost levers
 
@@ -128,6 +140,7 @@ memory of these rules.
 - **Prisma 7** with `@prisma/adapter-pg` driver adapter — client at `app/generated/prisma/client`
 - **Postgres** — Docker locally (`frontdoor:frontdoor@localhost:5432/frontdoor`), Neon in prod
 - **Anthropic Claude API** — Sonnet 4.6 default, Haiku for extraction, Opus reserved for hardest tasks
+- **Firecrawl** (`@mendable/firecrawl-js`) — hosted scrape API used by Path B scoring for HTML, screenshot, and the `branding` format (logo + CSS-extracted colors + fonts)
 - **Vercel API** — demo deploys to `frontdoor-demos` project as subdomains; production deploys on payment
 - **Stripe** — one-time Checkout session, webhook triggers final deployment
 - **Tailwind CSS v4**
@@ -140,9 +153,18 @@ Five tables: `Lead`, `ScrapeJob`, `DemoSite`, `Payment`, `Deployment`.
 
 A single `Lead` table handles both lead types. The `leadType` enum (`OUTDATED_WEBSITE` | `NO_WEBSITE`) routes pipeline behavior; type-specific fields are nullable on the unified model. Avoids the complexity of separate tables while keeping per-type data structured.
 
-Type-specific nullable fields:
-- **Outdated-website leads:** `existingSiteUrl`, `existingSiteQualityScore`, `existingSiteAnalysisJson` (Claude-extracted brand voice, palette, logo URL, services, current pain points)
-- **No-website leads:** `categoryProfile`, `personalitySignals` (when implemented)
+Shared fields:
+- `website` — null for no-website leads, populated for outdated-website
+- `score` (Int?) — opportunity score 0–100 (high = outdated/pitchable per [[0011]])
+- `scoreReasoning` (JSONB) — `ScoreFactor[]` from Sonnet
+- `photosJson` (JSONB) — Google Place photo references
+- `reviewsJson` (JSONB) — Google Place review records
+
+Outdated-website-specific:
+- `existingSiteAnalysisJson` (JSONB) — composite of Firecrawl-extracted `logoUrl` + `ExtractedColors` (per [[0012]]) plus Sonnet-produced `brandVoice` / `services` / `painPoints` / `whatToPreserve`. Schema lives in `types/scoring.ts`.
+
+No-website-specific (Phase 7):
+- `categoryProfile`, `personalitySignals` (when implemented)
 
 ### Lead status machine
 
@@ -184,7 +206,7 @@ lib/utils/              Shared utilities (statusMachine, slugify, formatters)
 components/             React components
 components/ui/          Reusable primitives
 components/dashboard/   Dashboard-specific components
-templates/              Demo site template(s) — Phase 0 immediate priority
+templates/              Demo site template(s) — Phase 0.5 immediate priority
 types/                  Shared TypeScript types
 scripts/                CLI runners (tsx, never ts-node)
 prisma/                 Schema, migrations, seed
@@ -193,11 +215,11 @@ prisma/                 Schema, migrations, seed
 ## Build phases
 
 - **Phase 0** ✅ Foundation — schema, Docker, seed, lib/prisma.ts, statusMachine
-- **Phase 0.5** 🎯 **Active priority** — Build one beautiful, motion-rich Next.js template. Designed to feel premium. No further pipeline automation until this exists.
-- **Phase 1** ⏸️ Paused — Scraping (foundations exist; full pipeline waits on Phase 0.5)
-- **Phase 2** Existing-site analysis + scoring — Claude analyzes outdated sites, extracts brand context, scores quality
-- **Phase 3** Dashboard UI — lead table, approve/reject, scrape launcher
-- **Phase 4** Demo generation — Level 2 JSON pipeline → template variants → subdomain deploy
+- **Phase 0.5** 🎯 **Active priority** — Build one beautiful, motion-rich Next.js template. Designed to feel premium. Pipeline is now wired end-to-end through scoring; templates are the gating constraint on actually generating demos.
+- **Phase 1** ✅ Scraping — Google Places v1 integration, pagination, dedup, `leadTypeFilter` with over-fetch ([[0013]])
+- **Phase 2** ✅ Existing-site analysis + scoring — Path A (Haiku on Place metadata) + Path B (Firecrawl branding + regex pre-filter + Sonnet qualitative) per [[0011]]
+- **Phase 3** ✅ Dashboard UI — leads table, type filter, show-rejected toggle, per-lead detail page with reasoning + brand analysis, scrape launcher form
+- **Phase 4** Demo generation — Level 2 JSON pipeline → template variants → subdomain deploy (depends on Phase 0.5)
 - **Phase 5** Stripe + production deploy — Checkout, webhook, customer-owned Vercel deploy
 - **Phase 6** Hardening — error handling, auth, rate limiting
 - **Phase 7** No-website lead expansion — category defaults, review/photo mining
@@ -210,6 +232,8 @@ See `.env.example` for the full list. Key ones:
 - `ANTHROPIC_MODEL` — runtime default, set to `claude-sonnet-4-6`
 - `ANTHROPIC_SCORING_MODEL` — set to `claude-haiku-4-5-20251001`
 - `GOOGLE_PLACES_API_KEY` — scraping
+- `FIRECRAWL_API_KEY` — Path B scraping (HTML + screenshot + branding)
+- `SCORING_REJECT_THRESHOLD` — leads scored at or below this auto-reject (default 25)
 - `VERCEL_API_TOKEN` — deployment
 - `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` — payments
 - `DASHBOARD_PASSWORD` — simple single-user auth (Phase 6)

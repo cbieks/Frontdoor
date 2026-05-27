@@ -3,7 +3,11 @@
  *
  * Usage:
  *   npx tsx scripts/scrape-manual.ts "restaurants in Portland OR"
- *   npx tsx scripts/scrape-manual.ts "hair salons in Austin TX" --min-rating 4.0 --max-results 20
+ *   npx tsx scripts/scrape-manual.ts "hair salons in Austin TX" --min-rating=4.0 --max-results=20
+ *
+ * The scrape now keeps both lead types (with/without website) and classifies
+ * each result by leadType at insert time. Modern-website leads are filtered
+ * out later by the scoring layer, not by the scraper.
  */
 import "dotenv/config";
 import { createScrapeJob, runScrapeJob } from "@/lib/scraper";
@@ -19,13 +23,27 @@ async function main() {
 
   const minRatingArg = args.find((a) => a.startsWith("--min-rating="));
   const maxResultsArg = args.find((a) => a.startsWith("--max-results="));
-  const includeWithWebsite = args.includes("--include-with-website");
+  const maxReviewCountArg = args.find((a) => a.startsWith("--max-review-count="));
+  const leadTypeArg = args.find((a) => a.startsWith("--lead-type="));
+  const leadTypeRaw = leadTypeArg?.split("=")[1];
+  let leadTypeFilter: "OUTDATED_WEBSITE" | "NO_WEBSITE" | undefined;
+  if (leadTypeRaw === "OUTDATED_WEBSITE" || leadTypeRaw === "NO_WEBSITE") {
+    leadTypeFilter = leadTypeRaw;
+  } else if (leadTypeArg) {
+    console.error(
+      `Invalid --lead-type value '${leadTypeRaw}'. Expected OUTDATED_WEBSITE or NO_WEBSITE.`
+    );
+    process.exit(1);
+  }
 
   const options = {
     query,
-    requireNoWebsite: !includeWithWebsite,
     minRating: minRatingArg ? parseFloat(minRatingArg.split("=")[1]) : undefined,
+    maxReviewCount: maxReviewCountArg
+      ? parseInt(maxReviewCountArg.split("=")[1], 10)
+      : undefined,
     maxResults: maxResultsArg ? parseInt(maxResultsArg.split("=")[1], 10) : undefined,
+    leadTypeFilter,
   };
 
   console.log(`Starting scrape: "${query}"`);

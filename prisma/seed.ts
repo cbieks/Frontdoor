@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, LeadStatus, Prisma } from "../app/generated/prisma/client";
+import { PrismaClient, LeadStatus, LeadType, Prisma } from "../app/generated/prisma/client";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -17,6 +17,7 @@ const SEED_LEADS = [
     reviewCount: 312,
     website: null,
     googlePlaceId: "seed_place_001",
+    leadType: LeadType.NO_WEBSITE,
     status: LeadStatus.scored,
     score: 87,
     scoreReasoning: [
@@ -34,6 +35,7 @@ const SEED_LEADS = [
     reviewCount: 156,
     website: null,
     googlePlaceId: "seed_place_002",
+    leadType: LeadType.NO_WEBSITE,
     status: LeadStatus.approved,
     score: 91,
     scoreReasoning: [
@@ -51,6 +53,7 @@ const SEED_LEADS = [
     reviewCount: 89,
     website: null,
     googlePlaceId: "seed_place_003",
+    leadType: LeadType.NO_WEBSITE,
     status: LeadStatus.scraped,
     score: null,
     scoreReasoning: JsonNull,
@@ -64,6 +67,7 @@ const SEED_LEADS = [
     reviewCount: 204,
     website: null,
     googlePlaceId: "seed_place_004",
+    leadType: LeadType.NO_WEBSITE,
     status: LeadStatus.contacted,
     score: 79,
     scoreReasoning: [
@@ -82,6 +86,7 @@ const SEED_LEADS = [
     reviewCount: 41,
     website: "https://mttabordrycleaning.com",
     googlePlaceId: "seed_place_005",
+    leadType: LeadType.OUTDATED_WEBSITE,
     status: LeadStatus.rejected,
     score: 18,
     scoreReasoning: [

@@ -55,25 +55,34 @@ enum DeploymentStatus {
   error
 }
 
+enum LeadType {
+  OUTDATED_WEBSITE
+  NO_WEBSITE
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Lead {
-  id             String     @id @default(cuid())
-  businessName   String
-  address        String?
-  phone          String?
-  category       String?
-  rating         Float?
-  reviewCount    Int?
-  website        String?    // nullable — no website = strong lead signal
-  googlePlaceId  String     @unique
-  status         LeadStatus @default(scraped)
-  score          Int?       // 0–100
-  scoreReasoning Json?      // [{ factor: string, impact: "positive"|"negative", note: string }]
-  demoUrl        String?    // /preview/[slug] or Vercel preview URL
-  scrapeJobId    String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  id                       String     @id @default(cuid())
+  businessName             String
+  address                  String?
+  phone                    String?
+  category                 String?
+  rating                   Float?
+  reviewCount              Int?
+  website                  String?    // nullable — no website = strong lead signal
+  googlePlaceId            String     @unique
+  leadType                 LeadType   @default(OUTDATED_WEBSITE)  // set at insert from website presence
+  status                   LeadStatus @default(scraped)
+  score                    Int?       // 0–100 outdated/opportunity score
+  scoreReasoning           Json?      // ScoreFactor[] — see lead-scoring skill
+  existingSiteAnalysisJson Json?      // Path B output, consumed by generation prompt
+  photosJson               Json?      // Google Place photos array
+  reviewsJson              Json?      // Google Place reviews array
+  demoUrl                  String?    // /preview/[slug] or Vercel preview URL
+  scrapeJobId              String?
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
 
   scrapeJob  ScrapeJob?  @relation(fields: [scrapeJobId], references: [id])
   demoSite   DemoSite?

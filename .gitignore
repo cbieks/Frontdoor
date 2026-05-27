@@ -51,3 +51,7 @@ next-env.d.ts
 # Skills that share infomation about my filepaths
 .claude/skills/sweep/
 .claude/skills/obsidian-vault/
+.claude/skills/catch-up/
+
+# scratch debug scripts (kept locally, not shared)
+scripts/debug-*.ts

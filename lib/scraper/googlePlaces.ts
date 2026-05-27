@@ -1,9 +1,10 @@
-import type { RawBusiness, ScraperOptions } from "./types";
+import type { RawBusiness, RawPhoto, RawReview, ScraperOptions } from "./types";
 
 const BASE_URL = "https://places.googleapis.com/v1/places:searchText";
 
-// Fields we request — covers everything in the Lead model.
-// Requesting only what we need keeps costs down (Places API bills per field mask).
+// Fields we request — covers everything in the Lead model plus the data
+// generation will consume later (photos, reviews). Places API bills per field
+// mask, so we ask only for what we use downstream.
 const FIELD_MASK = [
   "places.id",
   "places.displayName",
@@ -13,6 +14,10 @@ const FIELD_MASK = [
   "places.userRatingCount",
   "places.websiteUri",
   "places.primaryTypeDisplayName",
+  "places.businessStatus",
+  "places.editorialSummary",
+  "places.photos",
+  "places.reviews",
   "nextPageToken",
 ].join(",");
 
@@ -30,6 +35,10 @@ type PlaceResult = {
   userRatingCount?: number;
   websiteUri?: string;
   primaryTypeDisplayName?: { text: string };
+  businessStatus?: string;
+  editorialSummary?: { text?: string; languageCode?: string };
+  photos?: RawPhoto[];
+  reviews?: RawReview[];
 };
 
 async function searchPage(
@@ -69,6 +78,10 @@ async function searchPage(
     rating: p.rating ?? null,
     reviewCount: p.userRatingCount ?? null,
     website: p.websiteUri ?? null,
+    businessStatus: p.businessStatus ?? null,
+    editorialSummary: p.editorialSummary?.text ?? null,
+    photos: p.photos ?? [],
+    reviews: p.reviews ?? [],
   }));
 
   return { places, nextPageToken: data.nextPageToken };
