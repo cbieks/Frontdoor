@@ -12,7 +12,8 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "scrape": "tsx scripts/scrape-manual.ts",
-    "rescore": "tsx scripts/rescore.ts"
+    "rescore": "tsx scripts/rescore.ts",
+    "screens:hero": "tsx scripts/screenshot-hero.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -36,6 +37,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.4.0",
+    "playwright": "^1.60.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"

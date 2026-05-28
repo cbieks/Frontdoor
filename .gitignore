@@ -55,3 +55,5 @@ next-env.d.ts
 
 # scratch debug scripts (kept locally, not shared)
 scripts/debug-*.ts
+
+docs/screens
