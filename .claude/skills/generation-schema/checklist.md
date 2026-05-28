@@ -88,8 +88,15 @@ with placeholder content.
 
 ## Palette handling
 
-- [ ] `colorSource: "extracted"` uses hex values from
-      `palette.primary`, `palette.secondary`, `palette.accent` directly
+- [ ] `colorSource: "extracted"` renders from the four required slots
+      `palette.primary`, `palette.accent`, `palette.background`,
+      `palette.textPrimary` — these are always present
+- [ ] Optional slots `palette.secondary` and `palette.link` are handled when
+      present; `link` falls back to `accent` when absent
+- [ ] Generation prompt composes the output palette from the (possibly sparse)
+      scraped `existingSiteAnalysis.extractedColors` — deriving a missing accent,
+      defaulting background to white and textPrimary to a high-contrast
+      near-black — so the template never receives `undefined` for a core slot
 - [ ] `colorSource: "predefined"` maps `palette.name` to the correct
       CSS design tokens
 - [ ] All five predefined palettes have corresponding CSS token definitions:

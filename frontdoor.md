@@ -4,7 +4,7 @@ Lead generation and website automation pipeline. Finds small businesses with out
 
 ## Current immediate priority
 
-**Build one impressive template before further pipeline automation.** Frontdoor's differentiation against Wix-style competitors is design taste and per-business intelligence, not template volume. The active Phase 0.5 work is producing a single beautiful, motion-rich Next.js landing page that we'd be proud to send to any prospect. Phase 1 scraping work is paused until that template exists. The rest of the architecture depends on having a template worth automating around — and if the template isn't unmistakably good, no amount of variety covers for it.
+**Frontdoor's own marketing site and internal dashboard — the proving ground for the new UI design stack (impeccable + Framer Motion + 21st.dev; ADR-0014).** Scraping, scoring, and the dashboard are wired end-to-end (Phases 1–3 done). Before building the demo templates, validate the design tooling on Frontdoor's own surfaces: the marketing site (build from scratch) and the dashboard (polish the existing UI). The differentiation against Wix-style competitors is design taste and per-business intelligence, not template volume; if Frontdoor's own site isn't unmistakably good, the templates won't be either. Templates follow, with a validated stack. Per-surface design context lives in `docs/design/`.
 
 ## Strategy
 
@@ -75,6 +75,7 @@ Google Maps scrape
 | Production hosting | Per-customer Vercel project after payment (Phase 2 concern) |
 | Scraping | Google Places Text Search API |
 | Styling | Tailwind CSS v4 |
+| Animation | Framer Motion (`motion`) |
 
 ## Runtime AI generation — Level 2
 

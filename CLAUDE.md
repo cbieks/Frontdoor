@@ -7,7 +7,7 @@ Lead generation and website automation pipeline. Finds small businesses with out
 
 ## Current immediate priority
 
-**Template design (Phase 0.5).** Scraping → scoring → dashboard is now wired end-to-end (Phases 1–3 done as of 2026-05-26). The Generate button on the dashboard returns 501 by design until one genuinely impressive Next.js landing page template exists. The project's differentiation lives in the design quality and per-business intelligence of the demos — Path B leads now arrive with full `existingSiteAnalysisJson` (Firecrawl-extracted logo + colors + fonts, Sonnet-extracted voice + services + painPoints + whatToPreserve) ready to feed into generation. Templates are the only thing between the pipeline and real demos.
+**Frontdoor's own marketing site + internal dashboard — the proving ground for the new UI design stack (impeccable + Framer Motion + 21st.dev; see [[0014]]).** Scraping → scoring → dashboard is wired end-to-end (Phases 1–3 done as of 2026-05-26). Before building the demo templates (Phase 0.5), validate the design tooling on Frontdoor's own surfaces: the marketing site (build from scratch, brand register) and the dashboard (polish the existing UI, product register). Both wear Frontdoor's own brand; the demo templates come after, with a validated stack. The Generate button stays 501 until templates exist. Per-surface design context lives in `docs/design/{website,dashboard,templates}/`, selected via `IMPECCABLE_CONTEXT_DIR`; the design workflow is in `.claude/rules/design.md`.
 
 ## Architecture overview
 
@@ -144,6 +144,7 @@ memory of these rules.
 - **Vercel API** — demo deploys to `frontdoor-demos` project as subdomains; production deploys on payment
 - **Stripe** — one-time Checkout session, webhook triggers final deployment
 - **Tailwind CSS v4**
+- **Framer Motion** (`motion`) — animation for demo templates and Frontdoor's own surfaces; maps to the schema's `motionIntensity` levels (dev-time UI stack per [[0014]])
 
 ## Data model
 
@@ -210,6 +211,7 @@ templates/              Demo site template(s) — Phase 0.5 immediate priority
 types/                  Shared TypeScript types
 scripts/                CLI runners (tsx, never ts-node)
 prisma/                 Schema, migrations, seed
+docs/design/            Per-surface impeccable design context (website/dashboard/templates)
 ```
 
 ## Build phases

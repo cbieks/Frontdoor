@@ -171,14 +171,21 @@ type GenerationOutput = {
 ## Palette types
 
 ```typescript
-// Used when colorSource is "extracted" (outdated-website leads)
+// Used when colorSource is "extracted" (outdated-website leads).
+// This is Claude's render-ready palette for the NEW demo — it is NOT a copy of
+// the scraped existingSiteAnalysis.extractedColors. Claude composes it from
+// those scraped colors, filling any missing core slot (see prompt rules below).
+// The four core slots are required so the template never renders `undefined`.
 type ExtractedPalette = {
   source: "extracted"
-  primary: string           // Hex. Dominant brand color from existing site.
-  secondary: string         // Hex. Supporting brand color.
-  accent: string            // Hex. CTA and highlight color. High contrast with primary.
-  reasoning: string         // 1 sentence: where these colors came from.
-                            //   e.g. "Extracted from logo and nav bar on existing site."
+  primary: string           // Required. Hex. Dominant brand color, carried from the existing site.
+  accent: string            // Required. Hex. CTA / highlight. Derive a high-contrast color if the existing site had none.
+  background: string        // Required. Hex. Page background. Default to white (#FFFFFF) when the existing site had no clear background.
+  textPrimary: string       // Required. Hex. Body text color. Ensure sufficient contrast against background.
+  secondary?: string        // Optional. Hex. Supporting brand color — omit for 2-color brands.
+  link?: string             // Optional. Hex. Anchor color — falls back to accent if omitted.
+  reasoning: string         // 1 sentence: where these colors came from and which were derived.
+                            //   e.g. "Kept brand blue from logo; added amber accent for CTAs since the original had none."
 }
 
 // Used when colorSource is "predefined" (no-website leads)
@@ -246,12 +253,18 @@ type OutdatedWebsiteLeadInput = {
       authorName: string
     }>
   }
-  existingSiteAnalysis: {   // Extracted by Claude in the scoring step
+  existingSiteAnalysis: {   // Produced by the scoring step. Shape mirrors
+                            // ExistingSiteAnalysis in types/scoring.ts exactly.
+                            // Colors + logo come from Firecrawl branding; the
+                            // qualitative fields come from Sonnet (see ADR-0011).
     brandVoice: string      // e.g. "casual and friendly", "formal and credential-forward"
-    extractedColors: {
-      primary: string       // Hex
-      secondary: string     // Hex
-      accent: string        // Hex
+    extractedColors: {      // All optional — real sites vary; Firecrawl returns only what it finds.
+      primary?: string      // Hex. Brand identity color.
+      secondary?: string    // Hex. Supporting brand color (often absent on 2-color brands).
+      accent?: string       // Hex. CTA / highlight.
+      background?: string   // Hex. Page background (usually white).
+      textPrimary?: string  // Hex. Body text color.
+      link?: string         // Hex. Anchor color.
     }
     logoUrl?: string
     services: string[]      // List of services found on existing site
@@ -295,6 +308,13 @@ type NoWebsiteLeadInput = {
 - The runtime API call must return the exact schema above — no extra keys,
   no missing required keys. Build a Zod schema that validates the response
   before passing it to the template engine.
+- For `colorSource: "extracted"`, the prompt must instruct Claude to compose a
+  complete `ExtractedPalette` from the (possibly sparse) scraped
+  `existingSiteAnalysis.extractedColors`: carry `primary` from the brand, derive
+  an `accent` when the existing site had none, default `background` to white and
+  `textPrimary` to a high-contrast near-black when absent. The four core slots
+  must always be present — the template relies on them and must never receive
+  `undefined`. Gap-filling is the prompt's job, not the renderer's.
 - The system prompt and template structure (section definitions, valid variant
   names, palette definitions) are the cached prefix. Every lead's generation
   call shares this prefix. Use the standard `anthropic.messages.create()`
@@ -347,9 +367,11 @@ evaluating generation quality.
   "palette": {
     "source": "extracted",
     "primary": "#1B4F8A",
-    "secondary": "#0D1B2A",
     "accent": "#F4A623",
-    "reasoning": "Blue extracted from logo and nav bar; amber from CTA buttons on existing site."
+    "background": "#FFFFFF",
+    "textPrimary": "#1A1A1A",
+    "secondary": "#0D1B2A",
+    "reasoning": "Kept brand blue from logo and nav bar; amber accent from existing CTA buttons; white background with near-black text for contrast."
   },
   "motionIntensity": "moderate",
   "sectionOrder": ["hero", "trust", "services", "process", "testimonials", "cta"],
