@@ -1,0 +1,25 @@
+# .worktreeincluded
+#
+# Paths that are gitignored but should still be copied into a fresh worktree
+# when agent orchestration spins one up. One path per line, relative to repo root.
+# Blank lines and `#` comments are ignored.
+#
+# Rule of thumb: include things the agent can't regenerate (secrets, local
+# config, user-specific skills). Skip things a build step recreates
+# (node_modules, .next, generated Prisma client, tsbuildinfo).
+
+# Environment — required for DB, Anthropic, Firecrawl, Google Places, Vercel, Stripe
+.env
+.env.local
+
+# Local Claude config — permissions and machine-specific overrides
+.claude/settings.local.json
+
+# User-specific skills (gitignored because they embed local filepaths,
+# but agents still need access to them)
+.claude/skills/sweep/
+.claude/skills/obsidian-vault/
+.claude/skills/catch-up/
+
+# Local scratch scripts — useful as context for in-progress debugging
+scripts/debug-*.ts
