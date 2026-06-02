@@ -23,3 +23,9 @@
 
 # Local scratch scripts — useful as context for in-progress debugging
 scripts/debug-*.ts
+
+# Installed deps and generated Prisma client — copy to skip
+# `npm install` (~30s–2min) and `prisma generate` on worktree spin-up.
+# Keep these in sync: app/generated/prisma must match @prisma/client in node_modules.
+node_modules/
+app/generated/prisma/
